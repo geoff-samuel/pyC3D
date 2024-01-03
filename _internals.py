@@ -89,9 +89,19 @@ class ParameterBase(object):
     """The base class for parameters and parameter groups"""
 
     def __init__(
-        self, name: str, description: str | None = None, locked: bool = False
+        self, 
+        name: str, 
+        description: str | None = None, 
+        locked: bool = False
     ) -> None:
-        """Creates a new parameter base. This is the base class for parameters and parameter groups"""
+        """
+        Creates a new parameter base.
+
+        Args:
+            name (str): The name of the parameter.
+            description (str, optional): The description of the parameter. Defaults to None.
+            locked (bool, optional): Indicates if the parameter is locked. Defaults to False.
+        """
         super(ParameterBase, self).__init__()
         self._name: str = name
         self._description: str = description or ""
@@ -112,7 +122,6 @@ class ParameterBase(object):
     def setDescription(self, newValue: str) -> None:
         """Sets the description of the parameter. If the description is None it will be set to an empty string"""
         self._description = newValue or ""
-
     def locked(self) -> bool:
         """Returns True if the parameter is locked. If the parameter is locked it cannot be changed"""
         return self._locked
@@ -133,7 +142,16 @@ class Parameter(ParameterBase):
         dataType: int | None = None,
         data: object = None,
     ) -> None:
-        """Creates a new parameter. If the data type is None the data will be set to None"""
+        """
+        Creates a new parameter.
+
+        Args:
+            name (str): The name of the parameter.
+            description (str, optional): The description of the parameter. Defaults to None.
+            locked (bool, optional): Indicates if the parameter is locked. Defaults to False.
+            dataType (int, optional): The data type of the parameter. Defaults to None.
+            data (object, optional): The data associated with the parameter. Defaults to None.
+        """
         super(Parameter, self).__init__(name, description=description, locked=locked)
         self._data: object = data
         self._dataType: int | None = dataType
@@ -181,7 +199,15 @@ class ParameterGroup(ParameterBase):
         description: str | None = None,
         locked: bool = False,
     ) -> None:
-        """Creates a new parameter group. If the group id is positive the group will be locked"""
+        """
+        Initializes a new parameter group.
+
+        Args:
+            name (str): The name of the parameter group.
+            groupId (int): The ID of the parameter group. If positive, the group will be locked.
+            description (str, optional): The description of the parameter group. Defaults to None.
+            locked (bool, optional): Indicates whether the parameter group is locked. Defaults to False.
+        """
         super(ParameterGroup, self).__init__(
             name, description=description, locked=locked
         )
