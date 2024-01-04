@@ -77,10 +77,10 @@ class BinaryFileReader(object):
         return data.decode()
 
     def readBytes(self, length:int) -> bytes:
-        if self._handle is None:
+        try:
+            return self._handle.read(length)
+        except AttributeError:
             raise IOError("No file is open")
-        value = self._handle.read(length)
-        return value
 
     def readByte(self) -> int:
         """ Method read a single byte from a binary file
@@ -145,9 +145,11 @@ class BinaryFileReader(object):
         else:
             raise ValueError("Unsupported processor type")
 
-    def readMarkerValuesInts(self, pointScale=1.0) -> list[float]:
-        return [value * pointScale for value in struct.unpack(f"<hhhh", self.readBytes(4*consts.DataTypes.INT.size))]
+    def bulkReadFloat(self, total) -> list[float]:
+        return struct.unpack(f"<{total}f", self.readBytes(consts.DataTypes.FLOAT.size * total))
 
-    def readMarkerValuesFloats(self) -> list[float]:
-        return struct.unpack(f"<ffff", self.readBytes(4*consts.DataTypes.FLOAT.size))
+    def bulkReadInt(self, total) -> list[int]:
+        return struct.unpack(f"<{total}h", self.readBytes(consts.DataTypes.INT.size * total))
+
+
 

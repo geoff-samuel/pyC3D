@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 
 from pyC3D import vector3, binaryFileReader, _internals, consts
 
@@ -53,7 +54,7 @@ class C3DFile(object):
         self._readHeader(fileObj)
         self._readParameters(fileObj)
         self._readMarkers(fileObj)
-        #fileObj.closeFile()
+        fileObj.closeFile()
 
     def _readProcessorType(self, handle:binaryFileReader.BinaryFileReader) -> None:
         """ 
@@ -64,7 +65,6 @@ class C3DFile(object):
             handle (binaryFile): file handle object to the open c3d file
         """
         processorType: int = handle.readByte()
-        processorType =- 83 # This is part of the spec
         newProc: str | None = {
                 84: consts.ProcessorTypes.INTEL,
                 85: consts.ProcessorTypes.DEC,
@@ -183,11 +183,12 @@ class C3DFile(object):
         
         groupId: int = handle.readByte()
         groupName: str = handle.readStringFromByte(nameLength)
+        
         currentFilePos: int = handle.tell()
         bytesToNextGroup: int = handle.readInt()
         if bytesToNextGroup == 0:
             return False
-
+ 
         parameterGroup: _internals.ParameterGroup | None = self.getParameterByGroupId(groupId)
 
         if parameterGroup is None:
@@ -277,7 +278,8 @@ class C3DFile(object):
             return
         
         markers:_internals.ParameterBase | None = pointGroup.getParameter("LABELS")
-        
+        markers2:_internals.ParameterBase | None = pointGroup.getParameter("LABELS2")
+
         # Check if the file has markers
         if markers is None:
             return 
@@ -288,26 +290,76 @@ class C3DFile(object):
             newMarker: _internals.Marker = _internals.Marker(markerName)
             self._markers.append(newMarker)
         
+        if markers2 is not None:
+            for markerName in markers2.data():
+                newMarker: _internals.Marker = _internals.Marker(markerName)
+                self._markers.append(newMarker)
+        
+        if len(self._markers) != self.getMarkerCount():
+            raise ValueError("Marker count does not match the number of markers in the file")
+        
         startOfDataBlock:int = (self._header.dataStart - 1) * 512
+        handle.seek(startOfDataBlock)
         pointScale: float = pointGroup.getParameter("SCALE").data()
         
-        val = (self._header.lastFrame - self._header.firstFrame) * self.getMarkerCount()
-        
+        numberOfDataPoints = ((self._header.lastFrame - self._header.firstFrame) * self.getMarkerCount()) * 4
+
         if pointScale < 0:
-            data = [handle.readMarkerValuesFloats() for _ in range(val)]
+            data = handle.bulkReadFloat(numberOfDataPoints)
         else:
-            data = [handle.readMarkerValuesInts(pointScale)  for _ in range(val)]
+            data = [value * pointScale for value in handle.bulkReadInt(numberOfDataPoints)]
         
-        idx = 0
-        for frameNumber in range(self._header.firstFrame, self._header.lastFrame):
-            for marker in self._markers:
-                
-                tempX, tempY, tempZ, _ = data[idx]
-                idx += 1
-                
-                if tempX == 0.0 and tempY == 0.0 and tempZ == 0.0:
-                    continue
-                marker.setPosition(frameNumber,  vector3.Vector3(tempX, tempY, tempZ))
+        # Process marker data in parallel using multiple threads
+        markerCount = self.getMarkerCount()
+        threads = []
+        for markerIdx, marker in enumerate(self._markers):
+            thread = threading.Thread(target=self.processMarkerData, args=(marker, data, markerIdx, markerCount))
+            threads.append(thread)
+            thread.start()
+
+        # Wait for all threads to finish
+        for thread in threads:
+            thread.join()
+
+    @staticmethod
+    def _quickVec(data):
+        """
+        Create a Vector3 object from the given data.
+
+        Args:
+            data (list): A list of three values representing the x, y, and z coordinates of the vector.
+
+        Returns:
+            Vector3: A Vector3 object representing the vector.
+
+        """
+        if data[0] == 0 and data[1] == 0 and data[2] == 0:
+            return  None
+        vec = vector3.Vector3.__new__(vector3.Vector3)
+        vec._data = data
+        return vec
+        
+    @classmethod
+    def processMarkerData(cls, marker, data, markerIdx, markerCount):
+        """
+        Process marker data and assign it to the marker object.
+
+        Args:
+            marker (Marker): The marker object to assign the processed data to.
+            data (list): The raw marker data.
+            markerIdx (int): The index of the marker.
+            markerCount (int): The total number of markers.
+
+        Returns:
+            None
+        """
+        # This method is used to process marker data and assign it to the marker object.
+        # It takes in the marker object, raw marker data, marker index, and total number of markers as parameters.
+        # It creates a dictionary of marker data for each frame, where the frame number is the key and the processed marker data is the value.
+        # The processed marker data is obtained by calling the _quickVec method on a subset of the raw marker data.
+        # Finally, the processed marker data is assigned to the marker object.
+        markerData = {frame: cls._quickVec(data[idx + markerIdx * 4 : idx + markerIdx * 4 + 4]) for frame, idx in enumerate(range(0, len(data), markerCount * 4))}
+        marker._data = markerData
 
     def readFrame(self, frameNumber:int) -> list[vector3.Vector3 | None]:
         """ 

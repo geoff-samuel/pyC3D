@@ -33,9 +33,7 @@ class ParameterDataTypes(object):
         elif isinstance(inputData, float):
             return cls.FloatingPoint
         else:
-            raise ValueError(
-                f"{type(inputData)} is not a supported type in the c3d format"
-            )
+            raise ValueError(f"{type(inputData)} is not a supported type in the c3d format")
 
     @classmethod
     def dataTypeCheck(cls, inputData: object, inputType: int) -> bool:
@@ -188,6 +186,10 @@ class Parameter(ParameterBase):
         """Clears the data and data type"""
         self._data = None
 
+    def __repr__(self) -> str:
+        """Returns a string representation of the Parameter object"""
+        return f"Parameter(name='{self.name()}', description='{self.description()}', locked={self.locked()})"    
+
 
 class ParameterGroup(ParameterBase):
     """A group of parameters in a c3d file"""
@@ -258,6 +260,11 @@ class ParameterGroup(ParameterBase):
             self._parameters.remove(param)
             return True
         return False
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the Parameter object"""
+        return f"ParameterGroup(name='{self.name()}', groupId='{self.groupId()}', description='{self.description()}', locked={self.locked()})"    
+
 
 
 class Marker(object):

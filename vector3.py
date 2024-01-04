@@ -8,7 +8,7 @@ class Vector3(object):
     A class representing a 3-dimensional vector.
     """
 
-    __slots__ = ["_x", "_y", "_z"]
+    __slots__ = ("_data")
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         """
@@ -19,9 +19,7 @@ class Vector3(object):
             y (float): The y-coordinate of the vector. Default is 0.0.
             z (float): The z-coordinate of the vector. Default is 0.0.
         """
-        self._x: float = x
-        self._y: float = y
-        self._z: float = z
+        self._data = [x, y, z]
 
     def __repr__(self) -> str:
         """
@@ -30,7 +28,7 @@ class Vector3(object):
         Returns:
             str: A string representation of the Vector3 object.
         """
-        return "Vector3 (%s,%s,%s)" % (self._x, self._y, self._z)
+        return f"Vector3 ({self.x()}, {self.y()}, {self.z()})"
 
     def x(self) -> float:
         """
@@ -39,7 +37,7 @@ class Vector3(object):
         Returns:
             float: The x-coordinate of the vector.
         """
-        return self._x
+        return self._data[0]
 
     def setX(self, newValue: float) -> None:
         """
@@ -48,7 +46,7 @@ class Vector3(object):
         Args:
             newValue (float): The new value for the x-coordinate.
         """
-        self._x = newValue
+        self._data[0] = float(newValue)
 
     def y(self) -> float:
         """
@@ -57,7 +55,7 @@ class Vector3(object):
         Returns:
             float: The y-coordinate of the vector.
         """
-        return self._y
+        return self._data[1]
 
     def setY(self, newValue: float) -> None:
         """
@@ -66,7 +64,7 @@ class Vector3(object):
         Args:
             newValue (float): The new value for the y-coordinate.
         """
-        self._y = newValue
+        self._data[1] = float(newValue)
 
     def z(self) -> float:
         """
@@ -75,7 +73,7 @@ class Vector3(object):
         Returns:
             float: The z-coordinate of the vector.
         """
-        return self._z
+        return self._data[2]
 
     def setZ(self, newValue: float) -> None:
         """
@@ -84,7 +82,7 @@ class Vector3(object):
         Args:
             newValue (float): The new value for the z-coordinate.
         """
-        self._z = newValue
+        self._data[2] = float(newValue)
 
     def scalarProduct(self, value: float) -> 'Vector3':
         """
@@ -172,7 +170,7 @@ class Vector3(object):
         Returns:
             Vector3: The negated vector.
         """
-        return Vector3(-self._x, -self._y, -self._z)
+        return Vector3(-self.x(), -self.y(), -self.z())
 
     def __mul__(self, val: 'Vector3' | float) -> float | 'Vector3':
         """
