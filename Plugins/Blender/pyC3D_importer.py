@@ -105,7 +105,7 @@ class _Marker(object):
 
 
 class C3DImporter(types.Operator, io_utils.ImportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
+    """C3D File importer"""
     bl_idname = "c3d.importdata"  # important since its how bpy.ops.C3D.importData is constructed
     bl_label = "Import C3D Motion Data"
 
